@@ -1,4 +1,4 @@
-# ESP-MQTT sample application
+# Pet-Feeder sample application
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example connects to the broker URI selected using `idf.py menuconfig` (using mqtt tcp transport) and as a demonstration subscribes/unsubscribes and send a message on certain topic.
@@ -12,7 +12,7 @@ It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
 
 ### Hardware Required
 
-This example can be executed on any ESP32 board, the only required interface is WiFi and connection to internet.
+This project can be executed on any ESP32 board. To run this project successfully, we need an infrared sensor, a load cell, and an OLED display connected through I2C. We will also use Thingsboard as an IoT platform to collect data and send alerts to a Telegram group managed by a bot.
 
 ### Configure the project
 
