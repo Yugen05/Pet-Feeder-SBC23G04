@@ -1,0 +1,1 @@
+COMPONENT_EMBED_FILES := components/ssd1306.c
