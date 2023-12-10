@@ -12,7 +12,7 @@ It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
 
 ### Hardware Required
 
-This project can be executed on any ESP32 board. To run this project successfully, we need an infrared sensor, a load cell, and an OLED display connected through I2C. We will also use Thingsboard as an IoT platform to collect data and send alerts to a Telegram group managed by a bot.
+This project can be executed on any ESP32 board. To run this project successfully, we need an infrared sensor, a compression load cell, and an OLED display connected through I2C. We will also use Thingsboard as an IoT platform to collect data and send alerts to a Telegram group managed by a bot.
 
 ### Configure the project
 

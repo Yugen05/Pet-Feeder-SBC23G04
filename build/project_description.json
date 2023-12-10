@@ -1,7 +1,7 @@
 {
     "version":            "1",
     "project_name":       "Pet-Feeder",
-    "project_version":    "1",
+    "project_version":    "89716b2-dirty",
     "project_path":       "/Users/yugen/Universidad/Cuarto/SBC/Proyecto_Final/Pet-Feeder",
     "idf_path":           "/Users/yugen/esp/esp-idf",
     "build_dir":          "/Users/yugen/Universidad/Cuarto/SBC/Proyecto_Final/Pet-Feeder/build",
