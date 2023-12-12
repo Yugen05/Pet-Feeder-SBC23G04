@@ -74,6 +74,7 @@ int FOOD, carga = 0;
 float porcentaje_carga = 0;
 
 SSD1306_t dev;
+char lineChar[14];
 char wifi[14] = "ESPERANDO WiFi";
 char wifi_disc[17] = "WIFI DESCONECTADA";
 char apagado[15] = "SISTEMA APAGADO";
@@ -330,17 +331,19 @@ static void mqtt_app_start(void)
         .uri = "mqtt://demo.thingsboard.io",
         .event_handle = mqtt_event_handler,
         .port = 1883,
-        .username = "2fIaEZVYzTaJ86worRb7",
+        .client_id = "9xysa3h6qia8notgadzv",
     };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
     esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 }
 
-static void sendData_Carga(esp_mqtt_client_handle_t client, int value)
+static void sendData(esp_mqtt_client_handle_t client)
 {
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "Carga", value);
+    cJSON_AddNumberToObject(root, "Carga", carga);
+    cJSON_AddNumberToObject(root, "Porcentaje Carga", porcentaje_carga);
+    cJSON_AddNumberToObject(root, "Time", task_counter_value);
     char *post_data = cJSON_PrintUnformatted(root);
     esp_mqtt_client_publish(client, "v1/devices/me/telemetry", post_data, 0, 1, 0);
     cJSON_Delete(root);
@@ -365,6 +368,10 @@ static void init_mqtt(void)
 
     ESP_ERROR_CHECK(example_connect());
     mqtt_app_start();
+    while (mClient==NULL)
+    {
+    }
+    
 }
 
 static void init_oled(void)
@@ -456,19 +463,19 @@ static void apagar(void)
 
 static void calcular_porcentaje(int c)
 {
-    if (3200 < c)
+    if (3600 < c)
     {
         porcentaje_carga = 0;
     }
 
-    else if (2000 > c)
+    else if (3200 > c)
     {
         porcentaje_carga = 100;
     }
 
     else
     {
-        porcentaje_carga = 100 - ((((float)c - 2000) / (3600 - 2000)) * 100);
+        porcentaje_carga = 100 - ((((float)c - 3200) / (3600 - 3200)) * 100);
     }
 }
 
@@ -476,7 +483,7 @@ void app_main(void)
 {
     init_oled();
 
-    char lineChar[14];
+    int cont = 0;
 
     int bitmapWidth = 4 * 8;
     int width = ssd1306_get_width(&dev);
@@ -508,11 +515,15 @@ void app_main(void)
         timer_get_counter_value(TIMER_GROUP_0, 0, &task_counter_value);
         if (mClient)
         {
+            if (cont == 0)
+            {
+                ssd1306_clear_screen(&dev, false);
+            }
 
             carga = adc1_get_raw(adc_carga); // Sensor de carga
             calcular_porcentaje(carga);
             printf("CARGA:%d\r\nP_CARGA:%f\r\n", carga, porcentaje_carga);
-            sendData_Carga(mClient, porcentaje_carga);
+            sendData(mClient);
 
             lineChar[0] = 0x00;
             sprintf(&lineChar[1], "Comida: %d", FOOD);
@@ -536,19 +547,22 @@ void app_main(void)
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 
-        /*else if (mClient == NULL)
+        if (task_counter_value > 300000000 || mClient == NULL)
         {
-            ssd1306_clear_screen(&dev, false);
-            ssd1306_display_text(&dev, 1, wifi_disc, 15, false);
-        } */
+            if (mClient == NULL)
+            {
+                ssd1306_clear_screen(&dev, false);
+                ssd1306_display_text(&dev, 1, wifi_disc, 15, false);
+                vTaskDelay(5000 / portTICK_PERIOD_MS);
+            }
 
-        if (task_counter_value > 300000000)
-        {
             ssd1306_clear_screen(&dev, false);
             ssd1306_display_text(&dev, 1, apagado, 15, false);
 
             apagar();
         }
+
+        cont++;
     }
 }
 
