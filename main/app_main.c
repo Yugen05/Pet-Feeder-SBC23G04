@@ -80,6 +80,7 @@ char wifi_disc[17] = "WIFI DESCONECTADA";
 char apagado[15] = "SISTEMA APAGADO";
 
 uint64_t task_counter_value; // valor timer0
+int time_normalizado = 0;
 
 /* Select and initialize basic parameters of the timer */
 timer_config_t config = {
@@ -341,9 +342,10 @@ static void mqtt_app_start(void)
 static void sendData(esp_mqtt_client_handle_t client)
 {
     cJSON *root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "Carga", carga);
-    cJSON_AddNumberToObject(root, "Porcentaje Carga", porcentaje_carga);
-    cJSON_AddNumberToObject(root, "Time", task_counter_value);
+    cJSON_AddNumberToObject(root, "Food", FOOD);
+    cJSON_AddNumberToObject(root, "Porcentaje_Carga", porcentaje_carga);
+    cJSON_AddNumberToObject(root, "Time", time_normalizado);
+    cJSON_AddNumberToObject(root, "Infrarrojos", gpio_get_level(INF));
     char *post_data = cJSON_PrintUnformatted(root);
     esp_mqtt_client_publish(client, "v1/devices/me/telemetry", post_data, 0, 1, 0);
     cJSON_Delete(root);
@@ -463,20 +465,25 @@ static void apagar(void)
 
 static void calcular_porcentaje(int c)
 {
-    if (3600 < c)
+    if (3560 < c)
     {
         porcentaje_carga = 0;
     }
 
-    else if (3200 > c)
+    else if (3540 > c)
     {
         porcentaje_carga = 100;
     }
 
     else
     {
-        porcentaje_carga = 100 - ((((float)c - 3200) / (3600 - 3200)) * 100);
+        porcentaje_carga = 100 - ((((float)c - 3540) / (3560 - 3540)) * 100);
     }
+}
+
+static int normalizar_tiempo(int t)
+{
+    return (t/(300000000/60));
 }
 
 void app_main(void)
@@ -508,11 +515,13 @@ void app_main(void)
 
     ssd1306_clear_screen(&dev, false);
     timer_start(TIMER_GROUP_0, 0);
+    //giro_motor();
 
     while (1)
     {
 
         timer_get_counter_value(TIMER_GROUP_0, 0, &task_counter_value);
+        time_normalizado = normalizar_tiempo(task_counter_value);
         if (mClient)
         {
             if (cont == 0)
@@ -532,7 +541,7 @@ void app_main(void)
             ssd1306_bitmaps(&dev, xpos, ypos, etsisi, 32, 29, true);
             ssd1306_bitmaps(&dev, 5, ypos, circulo[0], 32, 27, true);
 
-            if (!gpio_get_level(INF) && carga > 3400) // Si se detecta un animal
+            if (!gpio_get_level(INF) && porcentaje_carga < 20) // Si se detecta un animal
             {
                 printf("ANIMAL DETECTADO\n");
                 timer_set_counter_value(TIMER_GROUP_0, 0, 0);
@@ -547,7 +556,7 @@ void app_main(void)
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 
-        if (task_counter_value > 300000000 || mClient == NULL)
+        if (time_normalizado > 60 || mClient == NULL)
         {
             if (mClient == NULL)
             {
